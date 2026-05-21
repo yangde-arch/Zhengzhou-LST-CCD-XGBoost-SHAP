@@ -1,7 +1,44 @@
 # Zhengzhou-LST-CCD-XGBoost-SHAP
-## Software and implementation
 
-All machine-learning and explainable-AI analyses were conducted in Python.  
-This repository provides the scripts used for XGBoost model training, hyperparameter tuning, model comparison, SHAP interpretation, CCD classification sensitivity analysis, meteorological-control sensitivity analysis, and SHAP breakpoint validation.
+This repository provides the Python code used for the machine-learning and explainable-AI analyses in the manuscript revision:
 
-Remote-sensing preprocessing and landscape metric calculation were conducted using ArcGIS, FRAGSTATS, Excel, and Origin, whereas the AI-related analyses were implemented in Python.
+**Nonlinear Driving Mechanisms of Land Surface Temperature Under the Coupling of Blue-Green Space and Urbanization: An Analysis Based on Explainable Machine Learning**
+
+## Overview
+
+The repository contains reproducible Python scripts for:
+
+1. XGBoost model training, model comparison, and SHAP-based interpretation;
+2. Nonlinear SHAP response breakpoint validation using segmented regression and bootstrap confidence intervals;
+3. Sensitivity analysis of CCD classification reconstruction;
+4. Meteorological-control sensitivity analysis.
+
+Remote-sensing preprocessing and landscape metric calculation were conducted outside this repository using GIS and landscape-analysis software. The AI-related analyses were conducted in Python.
+
+## Repository structure
+
+```text
+Zhengzhou-LST-CCD-XGBoost-SHAP/
+│
+├── README.md
+├── LICENSE
+├── requirements.txt
+├── data_description.md
+│
+├── scripts/
+│   ├── 01_main_xgboost_shap_analysis.py
+│   ├── 02_ccd_reconstruction_sensitivity.py
+│   └── 03_meteorological_control_sensitivity.py
+│
+├── sample_data/
+│   ├── 01_main_xgboost_shap_analysis.csv
+│   ├── 02_ccd_reconstruction_sensitivity.csv
+│   └── 03_meteorological_control_sensitivity.csv
+│
+├── example_outputs/
+│   ├── threshold_breakpoint_results/
+│   ├── 02_ccd_reconstruction_sensitivity_results/
+│   └── 03_meteorological_control_sensitivity_results/
+│
+└── archive/
+    └── README.md
