@@ -69,7 +69,7 @@ def get_repository_root() -> Path:
 REPO_ROOT = get_repository_root()
 DEFAULT_INPUT_PATH = REPO_ROOT / "sample_data" / "01_main_xgboost_shap_analysis.csv"
 DEFAULT_INPUT_DIR = REPO_ROOT / "sample_data"
-DEFAULT_OUTPUT_BASE = REPO_ROOT / "example_outputs" / "threshold_breakpoint_results"
+DEFAULT_OUTPUT_BASE = REPO_ROOT / "example_outputs" / "01_main_xgboost_shap_analysis_results"
 
 
 def parse_args():
@@ -218,18 +218,87 @@ def ensure_dir(path):
 
 
 def read_csv_smart(path):
-    encodings = ["utf-8-sig", "utf-8", "gbk", "gb18030"]
-    last_error = None
+    """Read tabular input robustly.
+
+    Recommended GitHub input format:
+        CSV UTF-8 (Comma delimited) (*.csv)
+
+    The function also detects Excel workbooks accidentally renamed as .csv,
+    which is a common cause of UnicodeDecodeError on Windows systems.
+    """
+    path_obj = Path(path)
+
+    if not path_obj.exists():
+        raise FileNotFoundError(f"Input file not found: {path_obj}")
+
+    with open(path_obj, "rb") as f:
+        magic = f.read(8)
+
+    excel_like = (
+        magic.startswith(b"\xD0\xCF\x11\xE0")
+        or magic.startswith(b"PK\x03\x04")
+        or path_obj.suffix.lower() in [".xls", ".xlsx", ".xlsm"]
+    )
+
+    if excel_like:
+        try:
+            df = pd.read_excel(path_obj)
+            print(f"Excel workbook loaded: {path_obj}")
+            print(
+                "Note: For repository reproducibility, please save the input as "
+                "CSV UTF-8 (Comma delimited) (*.csv)."
+            )
+            return df
+        except Exception as exc:
+            raise ValueError(
+                "The input appears to be an Excel workbook rather than a plain-text CSV. "
+                "Please save it as CSV UTF-8 (Comma delimited) (*.csv), or keep the "
+                "correct Excel suffix and install the required Excel reader. "
+                f"Original error: {exc}"
+            ) from exc
+
+    encodings = [
+        "utf-8-sig",
+        "utf-8",
+        "gb18030",
+        "gbk",
+        "cp936",
+        "utf-16",
+        "utf-16le",
+        "utf-16be",
+        "latin1",
+    ]
+
+    errors = []
 
     for enc in encodings:
         try:
-            df = pd.read_csv(path, encoding=enc)
-            print(f"CSV loaded: {path} (encoding: {enc})")
-            return df
-        except Exception as e:
-            last_error = e
+            df = pd.read_csv(path_obj, encoding=enc, low_memory=False)
 
-    raise last_error
+            if df.shape[1] == 1:
+                try:
+                    df_auto = pd.read_csv(
+                        path_obj,
+                        encoding=enc,
+                        sep=None,
+                        engine="python",
+                    )
+                    if df_auto.shape[1] > df.shape[1]:
+                        print(f"CSV loaded with delimiter auto-detection: {path_obj} ({enc})")
+                        return df_auto
+                except Exception:
+                    pass
+
+            print(f"CSV loaded: {path_obj} (encoding: {enc})")
+            return df
+
+        except Exception as exc:
+            errors.append(f"{enc}: {exc}")
+
+    raise UnicodeError(
+        "Unable to decode the input file as CSV. Please save it as CSV UTF-8 "
+        "(Comma delimited) (*.csv). Tried encodings: " + "; ".join(errors)
+    )
 
 
 def clean_column_name(col):
